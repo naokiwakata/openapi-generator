@@ -96,6 +96,7 @@ import java.io.IOException
 {{/isDeprecated}}
 {{>additionalModelTypeAnnotations}}
 {{#kotlinx_serialization}}
+{{#generateOneOfAnyOfWrappers}}
 
 {{#nonPublicApi}}internal {{/nonPublicApi}}{{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}sealed interface {{classname}} {
 {{#composedSchemas}}
@@ -164,6 +165,7 @@ import java.io.IOException
         throw SerializationException("Cannot deserialize {{classname}}. Tried: ${errorMessages.joinToString(", ")}")
     }
 }
+{{/generateOneOfAnyOfWrappers}}
 {{/kotlinx_serialization}}
 {{^kotlinx_serialization}}
 

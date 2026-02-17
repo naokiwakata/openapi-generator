@@ -152,6 +152,7 @@ import java.io.IOException
 }
 {{/discriminator}}
 {{^discriminator}}
+{{#generateOneOfAnyOfWrappers}}
 {{#nonPublicApi}}internal {{/nonPublicApi}}{{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}sealed interface {{classname}} {
 {{#composedSchemas}}
 {{#oneOf}}
@@ -219,6 +220,7 @@ import java.io.IOException
         throw SerializationException("Cannot deserialize {{classname}}. Tried: ${errorMessages.joinToString(", ")}")
     }
 }
+{{/generateOneOfAnyOfWrappers}}
 {{/discriminator}}
 {{/kotlinx_serialization}}
 {{^kotlinx_serialization}}

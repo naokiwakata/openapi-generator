@@ -680,6 +680,48 @@ public class KotlinClientCodegenModelTest {
                 "CustomTypeAdapterFactory");
     }
 
+    @Test(description = "generate oneOf/anyOf with kotlinx_serialization uses default generateOneOfAnyOfWrappers")
+    public void oneOfAnyOfDefaultFlagKotlinxSerialization() throws IOException {
+        File output = Files.createTempDirectory("test").toFile();
+        output.deleteOnExit();
+
+        // NOTE: generateOneOfAnyOfWrappers is NOT explicitly set here.
+        // It defaults to true in Java and should be propagated to templates
+        // automatically when kotlinx_serialization is selected.
+        final CodegenConfigurator configurator = new CodegenConfigurator()
+                .setGeneratorName("kotlin")
+                .setLibrary("jvm-retrofit2")
+                .setAdditionalProperties(new HashMap<>() {{
+                    put(SERIALIZATION_LIBRARY, "kotlinx_serialization");
+                    put(MODEL_PACKAGE, "xyz.abcdef.model");
+                }})
+                .setInputSpec("src/test/resources/3_0/kotlin/oneOf-primitive-types.yaml")
+                .setOutputDir(output.getAbsolutePath().replace("\\", "/"));
+
+        DefaultGenerator generator = new DefaultGenerator();
+        generator.opts(configurator.toClientOptInput()).generate();
+
+        final Path companyIdKt = Paths.get(output + "/src/main/kotlin/xyz/abcdef/model/CompanyId.kt");
+        TestUtils.assertFileContains(companyIdKt,
+                "sealed interface CompanyId",
+                "value class LongValue",
+                "object CompanyIdSerializer",
+                "KSerializer<CompanyId>");
+        TestUtils.assertFileNotContains(companyIdKt,
+                "data class CompanyId",
+                "actualInstance");
+
+        final Path profileIdKt = Paths.get(output + "/src/main/kotlin/xyz/abcdef/model/ProfileId.kt");
+        TestUtils.assertFileContains(profileIdKt,
+                "sealed interface ProfileId",
+                "value class LongValue",
+                "object ProfileIdSerializer",
+                "KSerializer<ProfileId>");
+        TestUtils.assertFileNotContains(profileIdKt,
+                "data class ProfileId",
+                "actualInstance");
+    }
+
     @Test(description = "generate polymorphic jackson model")
     public void polymorphicJacksonSerialization() throws IOException {
         File output = Files.createTempDirectory("test").toFile();
