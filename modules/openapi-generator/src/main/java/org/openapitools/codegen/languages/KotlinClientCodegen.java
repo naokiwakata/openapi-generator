@@ -567,6 +567,7 @@ public class KotlinClientCodegen extends AbstractKotlinCodegen {
         // We replace paths like `/v1/foo/*` with `/v1/foo/<*>` to avoid this
         additionalProperties.put("sanitizePathComment", new ReplaceAllLambda("\\/\\*", "/<*>"));
         additionalProperties.put("fnToOneOfWrapperName", new ToOneOfWrapperName());
+        additionalProperties.put("fnToOneOfValueClassName", new ToOneOfValueClassName());
     }
 
     private void processDateLibrary() {
@@ -1152,6 +1153,18 @@ public class KotlinClientCodegen extends AbstractKotlinCodegen {
         @Override
         public String formatFragment(String fragment) {
             return toModelName(StringUtils.lowerCase(fragment)) + "Wrapper";
+        }
+    }
+
+    /**
+     * Converts a fully-qualified type name to a value class name for oneOf sealed interfaces.
+     * e.g. "kotlin.Long" → "LongValue", "kotlin.String" → "StringValue", "MyModel" → "MyModelValue"
+     */
+    private static class ToOneOfValueClassName extends CustomLambda {
+        @Override
+        public String formatFragment(String fragment) {
+            String name = fragment.contains(".") ? fragment.substring(fragment.lastIndexOf('.') + 1) : fragment;
+            return name + "Value";
         }
     }
 

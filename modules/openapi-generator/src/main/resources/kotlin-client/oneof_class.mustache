@@ -57,9 +57,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 {{/discriminator}}
 {{^discriminator}}
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 {{/discriminator}}
 {{/generateOneOfAnyOfWrappers}}
@@ -101,12 +98,7 @@ import java.io.IOException
 {{/generateOneOfAnyOfWrappers}}
 {{#kotlinx_serialization}}
 {{#generateOneOfAnyOfWrappers}}
-{{#discriminator}}
 @Serializable(with = {{classname}}Serializer::class)
-{{/discriminator}}
-{{^discriminator}}
-@Serializable(with = {{classname}}.{{classname}}Serializer::class)
-{{/discriminator}}
 {{/generateOneOfAnyOfWrappers}}
 {{/kotlinx_serialization}}
 {{#isDeprecated}}
@@ -160,71 +152,71 @@ import java.io.IOException
 }
 {{/discriminator}}
 {{^discriminator}}
-{{#nonPublicApi}}internal {{/nonPublicApi}}{{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}data class {{classname}}(var actualInstance: Any? = null) {
+{{#nonPublicApi}}internal {{/nonPublicApi}}{{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}sealed interface {{classname}} {
+{{#composedSchemas}}
+{{#oneOf}}
+    @JvmInline
+    {{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}value class {{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}}(val value: {{{dataType}}}) : {{classname}}
 
-    {{#nonPublicApi}}internal {{/nonPublicApi}}{{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}object {{classname}}Serializer : KSerializer<{{classname}}> {
-        override val descriptor: SerialDescriptor = buildClassSerialDescriptor("{{classname}}") {
-            element("type", JsonPrimitive.serializer().descriptor)
-            element("actualInstance", JsonElement.serializer().descriptor)
+{{/oneOf}}
+{{/composedSchemas}}
+}
+
+{{#nonPublicApi}}internal {{/nonPublicApi}}{{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}object {{classname}}Serializer : KSerializer<{{classname}}> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("{{classname}}")
+
+    override fun serialize(encoder: Encoder, value: {{classname}}) {
+        val jsonEncoder = encoder as? JsonEncoder ?: throw SerializationException("{{classname}} can only be serialized with Json")
+        when (value) {
+{{#composedSchemas}}
+{{#oneOf}}
+{{#isPrimitiveType}}
+{{#isString}}
+            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeString(value.value)
+{{/isString}}
+{{#isBoolean}}
+            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeBoolean(value.value)
+{{/isBoolean}}
+{{#isInteger}}
+            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeInt(value.value)
+{{/isInteger}}
+{{#isLong}}
+            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeLong(value.value)
+{{/isLong}}
+{{#isNumber}}
+{{#isDouble}}
+            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeDouble(value.value)
+{{/isDouble}}
+{{#isFloat}}
+            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeFloat(value.value)
+{{/isFloat}}
+{{/isNumber}}
+{{/isPrimitiveType}}
+{{^isPrimitiveType}}
+            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeSerializableValue({{{dataType}}}.serializer(), value.value)
+{{/isPrimitiveType}}
+{{/oneOf}}
+{{/composedSchemas}}
+        }
+    }
+
+    override fun deserialize(decoder: Decoder): {{classname}} {
+        val jsonDecoder = decoder as? JsonDecoder ?: throw SerializationException("{{classname}} can only be deserialized with Json")
+        val jsonElement = jsonDecoder.decodeJsonElement()
+        val errorMessages = mutableListOf<String>()
+
+{{#composedSchemas}}
+{{#oneOf}}
+        try {
+            val instance = jsonDecoder.json.decodeFromJsonElement<{{{dataType}}}>(jsonElement)
+            return {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}}(instance)
+        } catch (e: Exception) {
+            errorMessages.add("Failed to deserialize as {{{dataType}}}: ${e.message}")
         }
 
-        override fun serialize(encoder: Encoder, value: {{classname}}) {
-            val jsonEncoder = encoder as? JsonEncoder ?: throw SerializationException("{{classname}} can only be serialized with Json")
-
-            when (val instance = value.actualInstance) {
-                {{#composedSchemas}}
-                {{#oneOf}}
-                {{#isPrimitiveType}}
-                {{#isString}}
-                is kotlin.String -> jsonEncoder.encodeString(instance)
-                {{/isString}}
-                {{#isBoolean}}
-                is kotlin.Boolean -> jsonEncoder.encodeBoolean(instance)
-                {{/isBoolean}}
-                {{#isInteger}}
-                is kotlin.Int -> jsonEncoder.encodeInt(instance)
-                {{/isInteger}}
-                {{#isLong}}
-                is kotlin.Long -> jsonEncoder.encodeLong(instance)
-                {{/isLong}}
-                {{#isNumber}}
-                {{#isDouble}}
-                is kotlin.Double -> jsonEncoder.encodeDouble(instance)
-                {{/isDouble}}
-                {{#isFloat}}
-                is kotlin.Float -> jsonEncoder.encodeFloat(instance)
-                {{/isFloat}}
-                {{/isNumber}}
-                {{/isPrimitiveType}}
-                {{^isPrimitiveType}}
-                is {{{dataType}}} -> jsonEncoder.encodeSerializableValue({{{dataType}}}.serializer(), instance)
-                {{/isPrimitiveType}}
-                {{/oneOf}}
-                {{/composedSchemas}}
-                null -> jsonEncoder.encodeJsonElement(JsonNull)
-                else -> throw SerializationException("Unknown type in actualInstance: ${instance::class}")
-            }
-        }
-
-        override fun deserialize(decoder: Decoder): {{classname}} {
-            val jsonDecoder = decoder as? JsonDecoder ?: throw SerializationException("{{classname}} can only be deserialized with Json")
-            val jsonElement = jsonDecoder.decodeJsonElement()
-
-            val errorMessages = mutableListOf<String>()
-
-            {{#composedSchemas}}
-            {{#oneOf}}
-            try {
-                val instance = jsonDecoder.json.decodeFromJsonElement<{{{dataType}}}>(jsonElement)
-                return {{classname}}(actualInstance = instance)
-            } catch (e: Exception) {
-                errorMessages.add("Failed to deserialize as {{{dataType}}}: ${e.message}")
-            }
-            {{/oneOf}}
-            {{/composedSchemas}}
-
-            throw SerializationException("Cannot deserialize {{classname}}. Tried: ${errorMessages.joinToString(", ")}")
-        }
+{{/oneOf}}
+{{/composedSchemas}}
+        throw SerializationException("Cannot deserialize {{classname}}. Tried: ${errorMessages.joinToString(", ")}")
     }
 }
 {{/discriminator}}

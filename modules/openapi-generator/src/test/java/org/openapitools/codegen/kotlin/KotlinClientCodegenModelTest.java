@@ -636,12 +636,14 @@ public class KotlinClientCodegenModelTest {
         final Path companyIdKt = Paths.get(output + "/src/main/kotlin/xyz/abcdef/model/CompanyId.kt");
 
         TestUtils.assertFileContains(companyIdKt,
-                "data class CompanyId",
-                "actualInstance",
+                "sealed interface CompanyId",
+                "value class LongValue",
+                "value class StringValue",
                 "object CompanyIdSerializer",
                 "KSerializer<CompanyId>");
         TestUtils.assertFileNotContains(companyIdKt,
-                "sealed interface",
+                "data class CompanyId",
+                "actualInstance",
                 "element[\"\"]");
     }
 
