@@ -27,3 +27,10 @@ components:
           nullable: true
         - type: string
           nullable: true
+    ProfileId:
+      anyOf:
+        - type: integer
+          format: int64
+          nullable: true
+        - type: string
+          nullable: true
