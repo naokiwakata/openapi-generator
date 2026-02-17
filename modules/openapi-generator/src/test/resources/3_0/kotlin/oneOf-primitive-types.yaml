@@ -1,0 +1,29 @@
+openapi: "3.0.1"
+info:
+  title: oneOf primitive types test
+  version: "1.0"
+paths:
+  /test:
+    get:
+      operationId: getTest
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestResponse'
+components:
+  schemas:
+    TestResponse:
+      type: object
+      properties:
+        company_id:
+          $ref: '#/components/schemas/CompanyId'
+    CompanyId:
+      oneOf:
+        - type: integer
+          format: int64
+          nullable: true
+        - type: string
+          nullable: true

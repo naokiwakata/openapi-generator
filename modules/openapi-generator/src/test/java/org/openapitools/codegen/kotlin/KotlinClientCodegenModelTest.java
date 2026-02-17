@@ -614,6 +614,37 @@ public class KotlinClientCodegenModelTest {
         TestUtils.assertFileContains(birdKt, "@SerialName(value = \"BIRD\")");
     }
 
+    @Test(description = "generate oneOf primitive types with kotlinx_serialization")
+    public void oneOfPrimitiveTypesKotlinxSerialization() throws IOException {
+        File output = Files.createTempDirectory("test").toFile();
+        output.deleteOnExit();
+
+        final CodegenConfigurator configurator = new CodegenConfigurator()
+                .setGeneratorName("kotlin")
+                .setLibrary("jvm-retrofit2")
+                .setAdditionalProperties(new HashMap<>() {{
+                    put(SERIALIZATION_LIBRARY, "kotlinx_serialization");
+                    put(MODEL_PACKAGE, "xyz.abcdef.model");
+                    put(GENERATE_ONEOF_ANYOF_WRAPPERS, true);
+                }})
+                .setInputSpec("src/test/resources/3_0/kotlin/oneOf-primitive-types.yaml")
+                .setOutputDir(output.getAbsolutePath().replace("\\", "/"));
+
+        DefaultGenerator generator = new DefaultGenerator();
+        generator.opts(configurator.toClientOptInput()).generate();
+
+        final Path companyIdKt = Paths.get(output + "/src/main/kotlin/xyz/abcdef/model/CompanyId.kt");
+
+        TestUtils.assertFileContains(companyIdKt,
+                "data class CompanyId",
+                "actualInstance",
+                "object CompanyIdSerializer",
+                "KSerializer<CompanyId>");
+        TestUtils.assertFileNotContains(companyIdKt,
+                "sealed interface",
+                "element[\"\"]");
+    }
+
     @Test(description = "generate polymorphic jackson model")
     public void polymorphicJacksonSerialization() throws IOException {
         File output = Files.createTempDirectory("test").toFile();
