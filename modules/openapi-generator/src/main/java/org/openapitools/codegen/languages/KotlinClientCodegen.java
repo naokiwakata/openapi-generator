@@ -475,6 +475,8 @@ public class KotlinClientCodegen extends AbstractKotlinCodegen {
 
         if (additionalProperties.containsKey(GENERATE_ONEOF_ANYOF_WRAPPERS)) {
             setGenerateOneOfAnyOfWrappers(convertPropertyToBooleanAndWriteBack(GENERATE_ONEOF_ANYOF_WRAPPERS));
+        } else if (this.serializationLibrary == SERIALIZATION_LIBRARY_TYPE.kotlinx_serialization) {
+            additionalProperties.put(GENERATE_ONEOF_ANYOF_WRAPPERS, generateOneOfAnyOfWrappers);
         }
 
         if (additionalProperties.containsKey(FAIL_ON_UNKNOWN_PROPERTIES)) {
