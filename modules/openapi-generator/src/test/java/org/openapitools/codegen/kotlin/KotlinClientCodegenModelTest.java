@@ -640,7 +640,10 @@ public class KotlinClientCodegenModelTest {
                 "value class LongValue",
                 "value class StringValue",
                 "object CompanyIdSerializer",
-                "KSerializer<CompanyId>");
+                "KSerializer<CompanyId>",
+                // Type guards: ensure JSON element type is checked before deserialization
+                "jsonElement is JsonPrimitive && !jsonElement.isString",
+                "jsonElement is JsonPrimitive && jsonElement.isString");
         TestUtils.assertFileNotContains(companyIdKt,
                 "data class CompanyId",
                 "actualInstance",
@@ -673,7 +676,10 @@ public class KotlinClientCodegenModelTest {
                 "value class LongValue",
                 "value class StringValue",
                 "object ProfileIdSerializer",
-                "KSerializer<ProfileId>");
+                "KSerializer<ProfileId>",
+                // Type guards: ensure JSON element type is checked before deserialization
+                "jsonElement is JsonPrimitive && !jsonElement.isString",
+                "jsonElement is JsonPrimitive && jsonElement.isString");
         TestUtils.assertFileNotContains(profileIdKt,
                 "data class ProfileId",
                 "actualInstance",
