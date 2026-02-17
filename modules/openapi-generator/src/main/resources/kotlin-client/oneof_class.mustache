@@ -97,9 +97,14 @@ import java.io.IOException
 {{/discriminator}}
 {{/generateOneOfAnyOfWrappers}}
 {{#kotlinx_serialization}}
+{{#discriminator}}
+@Serializable(with = {{classname}}Serializer::class)
+{{/discriminator}}
+{{^discriminator}}
 {{#generateOneOfAnyOfWrappers}}
 @Serializable(with = {{classname}}Serializer::class)
 {{/generateOneOfAnyOfWrappers}}
+{{/discriminator}}
 {{/kotlinx_serialization}}
 {{#isDeprecated}}
 @Deprecated(message = "This schema is deprecated.")
@@ -152,12 +157,14 @@ import java.io.IOException
 }
 {{/discriminator}}
 {{^discriminator}}
+{{! NOTE: The sealed interface + KSerializer pattern below is duplicated in anyof_class.mustache (using anyOf iterator). }}
+{{! Keep both templates in sync when making changes. }}
 {{#generateOneOfAnyOfWrappers}}
 {{#nonPublicApi}}internal {{/nonPublicApi}}{{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}sealed interface {{classname}} {
 {{#composedSchemas}}
 {{#oneOf}}
     @JvmInline
-    {{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}value class {{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}}(val value: {{{dataType}}}) : {{classname}}
+    {{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}value class {{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}}(val value: {{{dataType}}}) : {{classname}}
 
 {{/oneOf}}
 {{/composedSchemas}}
@@ -173,28 +180,28 @@ import java.io.IOException
 {{#oneOf}}
 {{#isPrimitiveType}}
 {{#isString}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeString(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeString(value.value)
 {{/isString}}
 {{#isBoolean}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeBoolean(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeBoolean(value.value)
 {{/isBoolean}}
 {{#isInteger}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeInt(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeInt(value.value)
 {{/isInteger}}
 {{#isLong}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeLong(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeLong(value.value)
 {{/isLong}}
 {{#isNumber}}
 {{#isDouble}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeDouble(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeDouble(value.value)
 {{/isDouble}}
 {{#isFloat}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeFloat(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeFloat(value.value)
 {{/isFloat}}
 {{/isNumber}}
 {{/isPrimitiveType}}
 {{^isPrimitiveType}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeSerializableValue({{{dataType}}}.serializer(), value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeSerializableValue({{{dataType}}}.serializer(), value.value)
 {{/isPrimitiveType}}
 {{/oneOf}}
 {{/composedSchemas}}
@@ -210,7 +217,7 @@ import java.io.IOException
 {{#oneOf}}
         try {
             val instance = jsonDecoder.json.decodeFromJsonElement<{{{dataType}}}>(jsonElement)
-            return {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}}(instance)
+            return {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}}(instance)
         } catch (e: Exception) {
             errorMessages.add("Failed to deserialize as {{{dataType}}}: ${e.message}")
         }

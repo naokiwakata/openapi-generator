@@ -96,13 +96,15 @@ import java.io.IOException
 {{/isDeprecated}}
 {{>additionalModelTypeAnnotations}}
 {{#kotlinx_serialization}}
+{{! NOTE: The sealed interface + KSerializer pattern below is duplicated in oneof_class.mustache (using oneOf iterator). }}
+{{! Keep both templates in sync when making changes. }}
 {{#generateOneOfAnyOfWrappers}}
 
 {{#nonPublicApi}}internal {{/nonPublicApi}}{{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}sealed interface {{classname}} {
 {{#composedSchemas}}
 {{#anyOf}}
     @JvmInline
-    {{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}value class {{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}}(val value: {{{dataType}}}) : {{classname}}
+    {{^nonPublicApi}}{{#explicitApi}}public {{/explicitApi}}{{/nonPublicApi}}value class {{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}}(val value: {{{dataType}}}) : {{classname}}
 
 {{/anyOf}}
 {{/composedSchemas}}
@@ -118,28 +120,28 @@ import java.io.IOException
 {{#anyOf}}
 {{#isPrimitiveType}}
 {{#isString}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeString(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeString(value.value)
 {{/isString}}
 {{#isBoolean}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeBoolean(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeBoolean(value.value)
 {{/isBoolean}}
 {{#isInteger}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeInt(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeInt(value.value)
 {{/isInteger}}
 {{#isLong}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeLong(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeLong(value.value)
 {{/isLong}}
 {{#isNumber}}
 {{#isDouble}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeDouble(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeDouble(value.value)
 {{/isDouble}}
 {{#isFloat}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeFloat(value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeFloat(value.value)
 {{/isFloat}}
 {{/isNumber}}
 {{/isPrimitiveType}}
 {{^isPrimitiveType}}
-            is {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}} -> jsonEncoder.encodeSerializableValue({{{dataType}}}.serializer(), value.value)
+            is {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}} -> jsonEncoder.encodeSerializableValue({{{dataType}}}.serializer(), value.value)
 {{/isPrimitiveType}}
 {{/anyOf}}
 {{/composedSchemas}}
@@ -155,7 +157,7 @@ import java.io.IOException
 {{#anyOf}}
         try {
             val instance = jsonDecoder.json.decodeFromJsonElement<{{{dataType}}}>(jsonElement)
-            return {{classname}}.{{#fnToOneOfValueClassName}}{{{dataType}}}{{/fnToOneOfValueClassName}}(instance)
+            return {{classname}}.{{#fnToValueClassName}}{{{dataType}}}{{/fnToValueClassName}}(instance)
         } catch (e: Exception) {
             errorMessages.add("Failed to deserialize as {{{dataType}}}: ${e.message}")
         }

@@ -286,7 +286,7 @@ public class KotlinClientCodegen extends AbstractKotlinCodegen {
 
         cliOptions.add(new CliOption(MAP_FILE_BINARY_TO_BYTE_ARRAY, "Map File and Binary to ByteArray (default: false)").defaultValue(Boolean.FALSE.toString()));
 
-        cliOptions.add(CliOption.newBoolean(GENERATE_ONEOF_ANYOF_WRAPPERS, "Generate oneOf, anyOf schemas as wrappers. Only `jvm-retrofit2`(library), `gson`(serializationLibrary) support this option."));
+        cliOptions.add(CliOption.newBoolean(GENERATE_ONEOF_ANYOF_WRAPPERS, "Generate oneOf, anyOf schemas as wrappers. Supported with `jvm-retrofit2` library using `gson` or `kotlinx_serialization` serializationLibrary."));
 
         CliOption serializationLibraryOpt = new CliOption(CodegenConstants.SERIALIZATION_LIBRARY, SERIALIZATION_LIBRARY_DESC);
         cliOptions.add(serializationLibraryOpt.defaultValue(serializationLibrary.name()));
@@ -569,7 +569,7 @@ public class KotlinClientCodegen extends AbstractKotlinCodegen {
         // We replace paths like `/v1/foo/*` with `/v1/foo/<*>` to avoid this
         additionalProperties.put("sanitizePathComment", new ReplaceAllLambda("\\/\\*", "/<*>"));
         additionalProperties.put("fnToOneOfWrapperName", new ToOneOfWrapperName());
-        additionalProperties.put("fnToOneOfValueClassName", new ToOneOfValueClassName());
+        additionalProperties.put("fnToValueClassName", new ToValueClassName());
     }
 
     private void processDateLibrary() {
@@ -1159,10 +1159,13 @@ public class KotlinClientCodegen extends AbstractKotlinCodegen {
     }
 
     /**
-     * Converts a fully-qualified type name to a value class name for oneOf sealed interfaces.
+     * Converts a fully-qualified type name to a value class name for oneOf/anyOf sealed interfaces.
      * e.g. "kotlin.Long" → "LongValue", "kotlin.String" → "StringValue", "MyModel" → "MyModelValue"
+     *
+     * <p>Note: If two composed schemas share the same simple type name (e.g. "com.a.Foo" and "com.b.Foo"),
+     * both will produce "FooValue", causing a compilation error. This is a known limitation.</p>
      */
-    private static class ToOneOfValueClassName extends CustomLambda {
+    private static class ToValueClassName extends CustomLambda {
         @Override
         public String formatFragment(String fragment) {
             String name = fragment.contains(".") ? fragment.substring(fragment.lastIndexOf('.') + 1) : fragment;
